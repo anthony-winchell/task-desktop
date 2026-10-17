@@ -177,3 +177,46 @@ func (a *App) AddTask(title string) error {
 
 	return nil
 }
+
+func (a *App) DeleteTask(id int) error {
+	result, err := a.db.Exec(
+		"DELETE FROM tasks WHERE id = ?",
+		id,
+	)
+	if err != nil {
+		return fmt.Errorf("delete task: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("task %d not found", id)
+	}
+
+	return nil
+}
+
+func (a *App) SetTaskCompleted(id int, completed bool) error {
+	result, err := a.db.Exec(
+		"UPDATE tasks SET completed = ? WHERE id = ?",
+		completed,
+		id,
+	)
+	if err != nil {
+		return fmt.Errorf("update task: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("task %d not found", id)
+	}
+
+	return nil
+}
