@@ -6,6 +6,7 @@ import {
   AddTask,
   DeleteTask,
   SetTaskCompleted,
+  UpdateTitle,
 } from "../wailsjs/go/main/App";
 
 const list = document.getElementById("task-list");
@@ -42,6 +43,32 @@ async function loadTasks() {
       const taskTitle = document.createElement("span");
       taskTitle.textContent = task.title;
 
+      const editButton = document.createElement("button");
+      editButton.textContent = "Edit";
+      editButton.addEventListener("click", async () => {
+        const titleEditor = document.createElement("input");
+        titleEditor.type = "text";
+        titleEditor.value = task.title;
+
+        item.replaceChild(titleEditor, taskTitle);
+        titleEditor.focus();
+
+        const saveButton = document.createElement("button");
+        saveButton.textContent = "Save";
+
+        saveButton.addEventListener("click", async () => {
+          try {
+            await UpdateTitle(task.id, titleEditor.value);
+            await loadTasks();
+          } catch (error) {
+            console.error(error);
+            status.textContent = `Failed to update task: ${error.message}`;
+          }
+        });
+
+        item.replaceChild(saveButton, editButton);
+      });
+
       const deleteButton = document.createElement("button");
       deleteButton.textContent = "Delete";
       deleteButton.addEventListener("click", async () => {
@@ -54,7 +81,7 @@ async function loadTasks() {
         }
       });
 
-      item.append(checkbox, taskTitle, deleteButton);
+      item.append(checkbox, taskTitle, editButton, deleteButton);
       list.appendChild(item);
     }
 

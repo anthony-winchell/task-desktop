@@ -220,3 +220,31 @@ func (a *App) SetTaskCompleted(id int, completed bool) error {
 
 	return nil
 }
+
+func (a *App) UpdateTitle(id int, newTitle string) error {
+	trimmed := strings.TrimSpace(newTitle)
+
+	if trimmed == "" {
+		return fmt.Errorf("title is required")
+	}
+
+	result, err := a.db.Exec(
+		"UPDATE tasks SET title = ? WHERE id = ?",
+		trimmed,
+		id,
+	)
+	if err != nil {
+		return fmt.Errorf("update task: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("task %d not found", id)
+	}
+
+	return nil
+}
