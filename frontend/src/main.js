@@ -1,5 +1,6 @@
 import "./style.css";
 import "./app.css";
+import "@sakun/system.css";
 
 import {
   GetTasks,
@@ -14,7 +15,58 @@ const status = document.getElementById("status");
 const form = document.getElementById("task-form");
 const titleInput = document.getElementById("task-title");
 
+function editTask(task, item, taskTitle, editButton, deleteButton) {
+  const titleEditor = document.createElement("input");
+  titleEditor.type = "text";
+  titleEditor.value = task.title;
+
+  const saveButton = document.createElement("button");
+  saveButton.textContent = "Save";
+
+  const cancelButton = document.createElement("button");
+  cancelButton.textContent = "Cancel";
+
+  function cancelEditing() {
+    item.replaceChild(taskTitle, titleEditor);
+    item.replaceChild(editButton, saveButton);
+    item.replaceChild(deleteButton, cancelButton);
+  }
+
+  async function saveEditing() {
+    saveButton.textContent = "Saving...";
+    saveButton.disabled = true;
+
+    try {
+      await UpdateTitle(task.id, titleEditor.value);
+      await loadTasks();
+    } catch (error) {
+      console.error(error);
+      status.textContent = `Failed to update task: ${error}`;
+    }
+  }
+
+  cancelButton.addEventListener("click", cancelEditing);
+  saveButton.addEventListener("click", saveEditing);
+
+  titleEditor.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      cancelEditing();
+    }
+
+    if (event.key === "Enter") {
+      saveEditing();
+    }
+  });
+
+  item.replaceChild(titleEditor, taskTitle);
+  item.replaceChild(saveButton, editButton);
+  item.replaceChild(cancelButton, deleteButton);
+
+  titleEditor.focus();
+}
+
 async function loadTasks() {
+  status.style.color = "";
   status.textContent = "Loading...";
 
   try {
@@ -43,43 +95,6 @@ async function loadTasks() {
       const taskTitle = document.createElement("span");
       taskTitle.textContent = task.title;
 
-      const editButton = document.createElement("button");
-      editButton.textContent = "Edit";
-      editButton.addEventListener("click", () => {
-        const titleEditor = document.createElement("input");
-        titleEditor.type = "text";
-        titleEditor.value = task.title;
-
-        item.replaceChild(titleEditor, taskTitle);
-        titleEditor.focus();
-
-        const saveButton = document.createElement("button");
-        saveButton.textContent = "Save";
-
-        const cancelButton = document.createElement("button");
-        cancelButton.textContent = "Cancel";
-
-        cancelButton.addEventListener("click", () => {
-          item.replaceChild(taskTitle, titleEditor);
-          item.replaceChild(editButton, saveButton);
-          item.replaceChild(deleteButton, cancelButton);
-        });
-
-        item.replaceChild(cancelButton, deleteButton);
-
-        saveButton.addEventListener("click", async () => {
-          try {
-            await UpdateTitle(task.id, titleEditor.value);
-            await loadTasks();
-          } catch (error) {
-            console.error(error);
-            status.textContent = `Failed to update task: ${error.message}`;
-          }
-        });
-
-        item.replaceChild(saveButton, editButton);
-      });
-
       const deleteButton = document.createElement("button");
       deleteButton.textContent = "Delete";
       deleteButton.addEventListener("click", async () => {
@@ -92,6 +107,12 @@ async function loadTasks() {
         }
       });
 
+      const editButton = document.createElement("button");
+      editButton.textContent = "Edit";
+      editButton.addEventListener("click", () => {
+        editTask(task, item, taskTitle, editButton, deleteButton);
+      });
+
       item.append(checkbox, taskTitle, editButton, deleteButton);
       list.appendChild(item);
     }
@@ -102,7 +123,6 @@ async function loadTasks() {
     status.style.color = "red";
     status.textContent = "Failed to load tasks!";
   }
-  status.style.color = "";
 }
 
 form.addEventListener("submit", async (event) => {
