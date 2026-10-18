@@ -1,6 +1,5 @@
-import "./style.css";
-import "./app.css";
 import "@sakun/system.css";
+import "./app.css";
 
 import {
   GetTasks,
@@ -21,9 +20,11 @@ function editTask(task, item, taskTitle, editButton, deleteButton) {
   titleEditor.value = task.title;
 
   const saveButton = document.createElement("button");
+  saveButton.className = "btn";
   saveButton.textContent = "Save";
 
   const cancelButton = document.createElement("button");
+  cancelButton.className = "btn";
   cancelButton.textContent = "Cancel";
 
   function cancelEditing() {
@@ -76,9 +77,11 @@ async function loadTasks() {
 
     for (const task of tasks) {
       const item = document.createElement("li");
+      item.classList.toggle("completed", task.completed);
 
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
+      checkbox.id = `task-${task.id}`;
       checkbox.checked = task.completed;
 
       checkbox.addEventListener("change", async () => {
@@ -92,10 +95,13 @@ async function loadTasks() {
         }
       });
 
-      const taskTitle = document.createElement("span");
+      // system.css draws the checkbox on the <label> that follows it
+      const taskTitle = document.createElement("label");
+      taskTitle.htmlFor = checkbox.id;
       taskTitle.textContent = task.title;
 
       const deleteButton = document.createElement("button");
+      deleteButton.className = "btn";
       deleteButton.textContent = "Delete";
       deleteButton.addEventListener("click", async () => {
         try {
@@ -108,6 +114,7 @@ async function loadTasks() {
       });
 
       const editButton = document.createElement("button");
+      editButton.className = "btn";
       editButton.textContent = "Edit";
       editButton.addEventListener("click", () => {
         editTask(task, item, taskTitle, editButton, deleteButton);

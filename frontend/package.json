@@ -9,5 +9,8 @@
   },
   "devDependencies": {
     "vite": "^7.0.0"
+  },
+  "dependencies": {
+    "@sakun/system.css": "^0.1.11"
   }
 }

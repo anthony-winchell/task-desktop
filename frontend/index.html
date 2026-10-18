@@ -7,19 +7,32 @@
   </head>
   <body>
     <main id="app">
-      <h1>Task Tracker</h1>
-      <p id="description">The cloud is just someone else's computer</p>
+      <div class="window">
+        <div class="title-bar">
+          <h1 class="title">Task Tracker</h1>
+        </div>
 
-      <ul id="task-list"></ul>
+        <div class="separator"></div>
 
-      <form id="task-form">
-        <input id="task-title" type="text" placeholder="What now?" required />
-        <button type="submit">Add task</button>
-      </form>
+        <div class="window-pane">
+          <p id="description">The cloud is just someone else's computer</p>
 
-      <p id="status">Loading tasks...</p>
+          <ul id="task-list"></ul>
+
+          <form id="task-form">
+            <input
+              id="task-title"
+              type="text"
+              placeholder="What now?"
+              required
+            />
+            <button class="btn" type="submit">Add task</button>
+          </form>
+
+          <p id="status">Loading tasks...</p>
+        </div>
+      </div>
     </main>
-
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
