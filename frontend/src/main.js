@@ -45,7 +45,7 @@ async function loadTasks() {
 
       const editButton = document.createElement("button");
       editButton.textContent = "Edit";
-      editButton.addEventListener("click", async () => {
+      editButton.addEventListener("click", () => {
         const titleEditor = document.createElement("input");
         titleEditor.type = "text";
         titleEditor.value = task.title;
@@ -55,6 +55,17 @@ async function loadTasks() {
 
         const saveButton = document.createElement("button");
         saveButton.textContent = "Save";
+
+        const cancelButton = document.createElement("button");
+        cancelButton.textContent = "Cancel";
+
+        cancelButton.addEventListener("click", () => {
+          item.replaceChild(taskTitle, titleEditor);
+          item.replaceChild(editButton, saveButton);
+          item.replaceChild(deleteButton, cancelButton);
+        });
+
+        item.replaceChild(cancelButton, deleteButton);
 
         saveButton.addEventListener("click", async () => {
           try {
