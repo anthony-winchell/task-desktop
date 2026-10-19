@@ -8,8 +8,6 @@ export function DeleteTask(arg1:number):Promise<void>;
 
 export function GetTasks():Promise<Array<main.Task>>;
 
-export function Greet(arg1:string):Promise<string>;
-
 export function SetTaskCompleted(arg1:number,arg2:boolean):Promise<void>;
 
 export function UpdateTitle(arg1:number,arg2:string):Promise<void>;

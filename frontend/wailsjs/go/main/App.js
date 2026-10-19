@@ -14,10 +14,6 @@ export function GetTasks() {
   return window['go']['main']['App']['GetTasks']();
 }
 
-export function Greet(arg1) {
-  return window['go']['main']['App']['Greet'](arg1);
-}
-
 export function SetTaskCompleted(arg1, arg2) {
   return window['go']['main']['App']['SetTaskCompleted'](arg1, arg2);
 }
