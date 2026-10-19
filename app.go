@@ -20,8 +20,9 @@ type Task struct {
 
 // App struct
 type App struct {
-	ctx context.Context
-	db  *sql.DB
+	ctx   context.Context
+	db    *sql.DB
+	dbErr error
 }
 
 // NewApp creates a new App application struct
@@ -48,13 +49,17 @@ func (a *App) initDB() error {
 		return fmt.Errorf("open database: %w", err)
 	}
 
+	initialized := false
+	defer func() {
+		if !initialized {
+			db.Close()
+		}
+	}()
+
 	db.SetMaxOpenConns(1)
 
 	if err := db.Ping(); err != nil {
-		if err = db.Close(); err != nil {
-			return fmt.Errorf("close database: %w", err)
-		}
-		return fmt.Errorf("connect to database: %w", err)
+		return fmt.Errorf("ping database: %w", err)
 	}
 
 	_, err = db.Exec(`
@@ -65,32 +70,30 @@ func (a *App) initDB() error {
         )
     `)
 	if err != nil {
-		if err = db.Close(); err != nil {
-			return fmt.Errorf("close database: %w", err)
-		}
 		return fmt.Errorf("create tasks table: %w", err)
 	}
 
-	a.db = db
-	log.Printf("Database initialized at %s", dbPath)
-
-	if err := a.seedDB(); err != nil {
+	if err := seedTasks(db); err != nil {
 		return fmt.Errorf("seed database: %w", err)
 	}
+
+	a.db = db
+	initialized = true
+	log.Printf("Database initialized at %s", dbPath)
 
 	return nil
 }
 
-func (a *App) seedDB() error {
+func seedTasks(db *sql.DB) error {
 	var count int
 
-	err := a.db.QueryRow("SELECT COUNT(*) FROM tasks").Scan(&count)
+	err := db.QueryRow("SELECT COUNT(*) FROM tasks").Scan(&count)
 	if err != nil {
 		return fmt.Errorf("count tasks: %w", err)
 	}
 
 	if count == 0 {
-		_, err = a.db.Exec(`
+		_, err = db.Exec(`
 				INSERT INTO tasks (title) VALUES
 				('Learn Wails'),
 				('Build a task tracker')
@@ -107,8 +110,9 @@ func (a *App) seedDB() error {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
-	if err := a.initDB(); err != nil {
-		log.Printf("Initialize database: %v", err)
+	a.dbErr = a.initDB()
+	if a.dbErr != nil {
+		log.Printf("initialize database: %v", a.dbErr)
 	}
 }
 
@@ -125,8 +129,25 @@ func (a *App) Greet(name string) string {
 	return fmt.Sprintf("Hello %s, It's show time!", name)
 }
 
+func (a *App) database() (*sql.DB, error) {
+	if a.dbErr != nil {
+		return nil, fmt.Errorf("database initialization failed: %w", a.dbErr)
+	}
+
+	if a.db == nil {
+		return nil, fmt.Errorf("database is not initialized")
+	}
+
+	return a.db, nil
+}
+
 func (a *App) GetTasks() ([]Task, error) {
-	rows, err := a.db.Query(
+	db, err := a.database()
+	if err != nil {
+		return nil, err
+	}
+
+	rows, err := db.Query(
 		"SELECT id, title, completed FROM tasks ORDER BY id",
 	)
 	if err != nil {
@@ -161,13 +182,18 @@ func (a *App) GetTasks() ([]Task, error) {
 }
 
 func (a *App) AddTask(title string) error {
+	db, err := a.database()
+	if err != nil {
+		return err
+	}
+
 	title = strings.TrimSpace(title)
 
 	if title == "" {
 		return fmt.Errorf("title is required")
 	}
 
-	_, err := a.db.Exec(
+	_, err = db.Exec(
 		"INSERT INTO tasks (title) values (?)",
 		title,
 	)
@@ -179,7 +205,12 @@ func (a *App) AddTask(title string) error {
 }
 
 func (a *App) DeleteTask(id int) error {
-	result, err := a.db.Exec(
+	db, err := a.database()
+	if err != nil {
+		return err
+	}
+
+	result, err := db.Exec(
 		"DELETE FROM tasks WHERE id = ?",
 		id,
 	)
@@ -200,7 +231,12 @@ func (a *App) DeleteTask(id int) error {
 }
 
 func (a *App) SetTaskCompleted(id int, completed bool) error {
-	result, err := a.db.Exec(
+	db, err := a.database()
+	if err != nil {
+		return err
+	}
+
+	result, err := db.Exec(
 		"UPDATE tasks SET completed = ? WHERE id = ?",
 		completed,
 		id,
@@ -222,13 +258,18 @@ func (a *App) SetTaskCompleted(id int, completed bool) error {
 }
 
 func (a *App) UpdateTitle(id int, newTitle string) error {
+	db, err := a.database()
+	if err != nil {
+		return err
+	}
+
 	trimmed := strings.TrimSpace(newTitle)
 
 	if trimmed == "" {
 		return fmt.Errorf("title is required")
 	}
 
-	result, err := a.db.Exec(
+	result, err := db.Exec(
 		"UPDATE tasks SET title = ? WHERE id = ?",
 		trimmed,
 		id,
